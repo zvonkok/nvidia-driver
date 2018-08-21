@@ -1,0 +1,29 @@
+# selinux-policy-devel
+# /usr/share/selinux/devel/include
+
+policy_module(nvidia-container, 0.1)
+
+gen_require(`
+        type container_runtime_tmpfs_t;
+        type container_file_t;
+	type xserver_misc_device_t;
+')
+
+
+virt_sandbox_domain_template(nvidia_container)
+
+# --- no dev_map_dev
+allow nvidia_container_t xserver_misc_device_t:chr_file map;
+
+# --- cuda creates a /root/.nv config files
+
+# --- allow nvidia_container_t tmpfs_t:file open;
+# --- open /proc/driver/nvidia/*
+fs_read_tmpfs_files(nvidia_container_t)
+# --- allow nvidia_container_t xserver_misc_device_t:chr_file { getattr ioctl open read write };
+# --- alloc mem, ... /dev/nvidia*
+dev_rw_xserver_misc(nvidia_container_t)
+# --- allow nvidia_container_t container_runtime_tmpfs_t:file { open read };
+read_files_pattern(nvidia_container_t, container_runtime_tmpfs_t, container_runtime_tmpfs_t)
+# --- allow nvidia_container_t sysfs_t:file read;
+dev_read_sysfs(nvidia_container_t)
