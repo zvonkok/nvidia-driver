@@ -19,11 +19,14 @@ allow nvidia_container_t container_runtime_t:process sigchld;
 
 # --- docker
 getattr_dirs_pattern(nvidia_container_t, container_runtime_tmpfs_t, container_runtime_tmpfs_t)
-# --- allow nvidia_container_t container_runtime_tmpfs_t:file { open read };
+list_dirs_pattern(nvidia_container_t, container_runtime_tmpfs_t, container_runtime_tmpfs_t)
 read_files_pattern(nvidia_container_t, container_runtime_tmpfs_t, container_runtime_tmpfs_t)
 
 # --- podman
-allow nvidia_container_t xserver_tmpfs_t:dir { read search open getattr };
+getattr_dirs_pattern(nvidia_container_t, xserver_tmpfs_t, xserver_tmpfs_t)
+list_dirs_pattern(nvidia_container_t, xserver_tmpfs_t, xserver_tmpfs_t)
+read_files_pattern(nvidia_container_t, xserver_tmpfs_t, xserver_tmpfs_t)
+
 
 # --- both: running nvidia-smi
 allow nvidia_container_t xserver_exec_t:file { entrypoint execute getattr };
