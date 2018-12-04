@@ -1,27 +1,48 @@
 #!/bin/bash -x
 
-BC="buildah config"
 
-NC=$(buildah from rhel7)
-
-RUN="buildah run --user 0 $NC --"
-COPY="buildah copy $NC"
-
-
-#_CUDA_VERSION=10.0.130
-#_CUDA_PKG_VERSION=10-0-${_CUDA_VERSION}-1
-#_CUDA_REPO_RPM=https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-repo-rhel7-${_CUDA_VERSION}-1.x86_64.rpm
+CNT=$(buildah from rhel7)
+MNT=$(buildah mount $CNT)
 
 ENV="buildah config --env"
+RUN="buildah run --user 0 $CNT --"
+COPY="buildah copy $CNT"
+COMMIT="buildah commit $CNT"
+UMOUNT="buildah umount"
+ENTRYPOINT="buildah config --entrypoint"
+RUNV="buildah run --volume /var/lib/docker/nvidia:/var/lib/docker/nvidia:z $CNT"
 
-#$ENV CUDA_VERSION=${_CUDA_VERSION} $NC
-#$ENV CUDA_PKG_VERSION=${_CUDA_PKG_VERSION} $NC
+HACK="buildah run --volume /var/lib/docker/nvidia:/var/lib/docker/nvidia:z $CNT --"
+
+_NVIDIA_DRIVER_VERSION=410.78
 
 $COPY /etc/yum.repos.d/* /etc/yum.repos.d/.
 $COPY /var/lib/yum/client-*.pem /var/lib/yum/.
 
-$RUN yum install  http://file.str.redhat.com/~tbaeder/nv-preview-repo-0.1-1.el7.noarch.rpm
+$HACK yum -y install kernel --downloadonly --downloaddir=/tmp
+$HACK rpm -ivh --nodeps --force /tmp/kernel-*.rpm
 
+#$RUN yum install  http://file.str.redhat.com/~tbaeder/nv-preview-repo-0.1-1.el7.noarch.rpm
+$RUNV yum -y install yum-plugin-nvidia
+$RUNV yum -y install nvidia-driver-cuda
+$RUN  yum -y install nvidia-container-runtime-hook
+
+$HACK rm -rf /tmp/*.rpm
+$HACK rpm -e kernel
+
+$RUN sed -i 's/#root/root/g' /etc/nvidia-container-runtime/config.toml
+$RUN sed -i 's/#path.*/path = "\/run\/nvidia\/driver\/usr\/bin\/nvidia-container-cli"/g'  /etc/nvidia-container-runtime/config.toml
+
+$RUN touch /lib/modules/`uname -r`/{modules.builtin,modules.order}
+$RUN depmod
+
+$COPY nvidia-driver /usr/local/bin
+
+$ENTRYPOINT '["nvidia-driver", "init"]' $CNT
+
+$COMMIT quay.io/zvonkok/nvidia-driver-container:v410.78
+
+#$UMOUNT $MNT
 
 
 
