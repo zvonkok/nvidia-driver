@@ -1,0 +1,27 @@
+#!/bin/bash -x
+
+BC="buildah config"
+
+NC=$(buildah from rhel7)
+
+RUN="buildah run --user 0 $NC --"
+COPY="buildah copy $NC"
+
+
+#_CUDA_VERSION=10.0.130
+#_CUDA_PKG_VERSION=10-0-${_CUDA_VERSION}-1
+#_CUDA_REPO_RPM=https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-repo-rhel7-${_CUDA_VERSION}-1.x86_64.rpm
+
+ENV="buildah config --env"
+
+#$ENV CUDA_VERSION=${_CUDA_VERSION} $NC
+#$ENV CUDA_PKG_VERSION=${_CUDA_PKG_VERSION} $NC
+
+$COPY /etc/yum.repos.d/* /etc/yum.repos.d/.
+$COPY /var/lib/yum/client-*.pem /var/lib/yum/.
+
+$RUN yum install  http://file.str.redhat.com/~tbaeder/nv-preview-repo-0.1-1.el7.noarch.rpm
+
+
+
+
