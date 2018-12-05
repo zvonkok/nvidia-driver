@@ -1,8 +1,7 @@
 #!/bin/bash -x
 
-
 CNT=$(buildah from rhel7)
-MNT=$(buildah mount $CNT)
+#MNT=$(buildah mount $CNT)
 
 ENV="buildah config --env"
 RUN="buildah run --user 0 $CNT --"
@@ -40,7 +39,7 @@ $COPY nvidia-driver /usr/local/bin
 
 $ENTRYPOINT '["nvidia-driver", "init"]' $CNT
 
-$COMMIT quay.io/zvonkok/nvidia-driver-container:v410.78
+$COMMIT quay.io/zvonkok/nvidia-driver:v410.78
 
 #$UMOUNT $MNT
 
