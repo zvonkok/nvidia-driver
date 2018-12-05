@@ -5,7 +5,7 @@ set -eu
 
 RUN_DIR=/run/nvidia
 PID_FILE=${RUN_DIR}/${0##*/}.pid
-DRIVER_VERSION=${DRIVER_VERSION:?"Missing driver version"}
+DRIVER_VERSION=410.78
 KERNEL_UPDATE_HOOK=/run/kernel/postinst.d/update-nvidia-driver
 
 _update_package_cache() {
@@ -147,8 +147,8 @@ _load_driver() {
     echo "Loading NVIDIA driver kernel modules..."
     modprobe -a nvidia nvidia-uvm nvidia-modeset
 
-    echo "Starting NVIDIA persistence daemon..."
-    nvidia-persistenced --persistence-mode
+    echo "TODO TODO TODO TODO Starting NVIDIA persistence daemon..."
+#    nvidia-persistenced --persistence-mode
 }
 
 # Stop persistenced and unload the kernel modules if they are currently loaded.
@@ -261,6 +261,7 @@ _shutdown() {
     return 1
 }
 
+
 init() {
     echo -e "\n========== NVIDIA Software Installer ==========\n"
     echo -e "Starting installation of NVIDIA driver version ${DRIVER_VERSION} for Linux kernel version ${KERNEL_VERSION}\n"
@@ -288,6 +289,11 @@ init() {
 #    fi
 
 #    _install_driver
+
+
+    chroot /host modprobe -r nouveau
+    chroot /host modprobe ipmi_msghandler
+
     _load_driver
     _mount_rootfs
     _write_kernel_update_hook

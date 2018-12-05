@@ -35,7 +35,9 @@ $RUN sed -i 's/#path.*/path = "\/run\/nvidia\/driver\/usr\/bin\/nvidia-container
 $RUN touch /lib/modules/`uname -r`/{modules.builtin,modules.order}
 $RUN depmod
 
-$COPY nvidia-driver /usr/local/bin
+$COPY nvidia-driver        /usr/local/bin
+$COPY oci-nvidia-hook.json /root
+
 
 $ENTRYPOINT '["nvidia-driver", "init"]' $CNT
 
