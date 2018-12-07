@@ -255,6 +255,7 @@ EOF
 _shutdown() {
     if _unload_driver; then
         _unmount_rootfs
+	rm -f /host/etc/containers/oci/hooks.d/oci-nvidia-hook.json
         rm -f ${PID_FILE} ${KERNEL_UPDATE_HOOK}
         return 0
     fi
@@ -291,10 +292,14 @@ init() {
 #    _install_driver
 
 
+    cp /etc/containers/oci/hooks.d/oci-nvidia-hook.json /host/etc/containers/oci/hooks.d/.
     chroot /host modprobe -r nouveau
     chroot /host modprobe ipmi_msghandler
 
     _load_driver
+
+    chcon -t container_file_t nvidia*
+
     _mount_rootfs
     _write_kernel_update_hook
 

@@ -13,34 +13,30 @@ spec:
       args: ["init"]
       securityContext:
         privileged: true
+        seLinuxOptions:
+          level: "s0"
       volumeMounts:
         - name: run-nvidia
-          mountPath: "/run/nvidia"
-          propagation: bidirectional
-        - name: hooks
-          mountPath: "/etc/containers/oci/hooks.d"
+          mountPath: /run/nvidia
+          mountPropagation: Bidirectional
         - name: config
-          mountPath: "/etc/containers/oci/hooks.d/oci-nvidia-hook.json"
-          subPath: oci-nvidia-hook.json
+          mountPath: /etc/containers/oci/hooks.d
         - name: host
-          mountPath: "/host"
+          mountPath: /host
   volumes:
     - name: host
       hostPath:
-        path: "/"
+        path: /
     - name: run-nvidia
       hostPath:
-        path: "/run/nvidia"
-    - name: hooks
-      hostPath:
-        path: "/etc/containers/oci/hooks.d"
-        type: DirectoryOrCreate
+        path: /run/nvidia
     - name: config
       configMap:
         name: nvidia-driver
         items:
           - key: oci-nvidia-hook-json
             path: oci-nvidia-hook.json
-
+  nodeSelector:
+    node.alpha.kubernetes-incubator.io/nfd-pci-0300_10de.present: "true" 
 
 
