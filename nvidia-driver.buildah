@@ -18,22 +18,22 @@ _NVIDIA_DRIVER_VERSION=410.78
 $COPY /etc/yum.repos.d/* /etc/yum.repos.d/.
 $COPY /var/lib/yum/client-*.pem /var/lib/yum/.
 
-$HACK yum -y install kernel --downloadonly --downloaddir=/tmp
-$HACK rpm -ivh --nodeps --force /tmp/kernel-*.rpm
+#$HACK yum -y install kernel --downloadonly --downloaddir=/tmp
+#$HACK rpm -ivh --nodeps --force /tmp/kernel-*.rpm
 
 #$RUN yum install  http://file.str.redhat.com/~tbaeder/nv-preview-repo-0.1-1.el7.noarch.rpm
 
-$RUNV yum -y install yum-plugin-nvidia
-$RUNV yum -y install nvidia-driver-cuda
-$RUN  yum -y install nvidia-container-runtime-hook
+#$RUNV yum -y install yum-plugin-nvidia
+$RUNV yum -y install kmod-nvidia-branch-410 nvidia-container-runtime-hook
 
-$HACK rm -rf /tmp/*.rpm
-$HACK rpm -e kernel
+#$HACK rm -rf /tmp/*.rpm
+#$HACK rpm -e kernel
 
 $RUN sed -i 's/#root/root/g' /etc/nvidia-container-runtime/config.toml
 $RUN sed -i 's/#path.*/path = "\/run\/nvidia\/driver\/usr\/bin\/nvidia-container-cli"/g'  /etc/nvidia-container-runtime/config.toml
-$RUN set -i 's/#debug/debug/g' /etc/nvidia-container-runtime/config.toml
+$RUN sed -i 's/#debug/debug/g' /etc/nvidia-container-runtime/config.toml
 
+$RUN mkdir -p /lib/modules/`uname -r`
 $RUN touch /lib/modules/`uname -r`/{modules.builtin,modules.order}
 $RUN depmod
 

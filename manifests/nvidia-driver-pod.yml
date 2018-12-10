@@ -2,13 +2,13 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: nvidia-driver
-  namespace: openshift-cluster-special-resource-operator
+  namespace: nvidia-driver 
 spec:
   restartPolicy: OnFailure
   hostPID: true
   containers:
     - name: nvidia-driver
-      image: "quay.io/zvonkok/nvidia-driver:v410.78"
+      image: "quay.io/zvonkok/nvidia-driver:v410.72"
       command: ["nvidia-driver"]
       args: ["init"]
       securityContext:
