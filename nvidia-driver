@@ -290,9 +290,14 @@ init() {
 #    fi
 
 #    _install_driver
+ 
+    if [ ! -e /host/etc/containers/oci/hooks.d ]; then
+    	mkdir -p /host/etc/containers/oci/hooks.d/
+    fi 
+    if [ -e /etc/containers/oci/hooks.d/oci-nvidia-hook.json ]; then	
+    	cp /etc/containers/oci/hooks.d/oci-nvidia-hook.json /host/etc/containers/oci/hooks.d/.
+    fi
 
-
-    cp /etc/containers/oci/hooks.d/oci-nvidia-hook.json /host/etc/containers/oci/hooks.d/.
     chroot /host modprobe -r nouveau
     chroot /host modprobe ipmi_msghandler
 
