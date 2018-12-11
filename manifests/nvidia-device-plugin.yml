@@ -36,3 +36,6 @@ spec:
         - name: device-plugin
           hostPath:
             path: /var/lib/kubelet/device-plugins
+      nodeSelector:
+        node.alpha.kubernetes-incubator.io/nfd-pci-0300_10de.present: "true" 
+
