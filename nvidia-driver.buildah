@@ -1,5 +1,7 @@
 #!/bin/bash -x
 
+set -e 
+
 CNT=$(buildah from rhel7)
 
 ENV="buildah config --env"
@@ -8,8 +10,9 @@ COPY="buildah copy $CNT"
 COMMIT="buildah commit $CNT"
 ENTRYPOINT="buildah config --entrypoint"
 
-NVIDIA_DRIVER_VERSION=410.79
-NVIDIA_DRIVER_RPMS="nvidia-driver nvidia-driver-cuda nvidia-modprobe nvidia-container-runtime-hook"
+VERSION=410.79
+BASE="make kernel-devel"
+RPMS="nvidia-driver-$VERSION nvidia-driver-cuda-$VERSION nvidia-modprobe nvidia-container-runtime-hook"
 
 EPEL_REPO=https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 CUDA_REPO=https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-repo-rhel7-10.0.130-1.x86_64.rpm
@@ -18,25 +21,30 @@ HOOK_REPO=https://nvidia.github.io/nvidia-container-runtime/centos7/nvidia-conta
 YUM_REPO=/etc/yum.repos.d/nvidia-container-runtime.repo
 HOOK_CONFIG=/etc/nvidia-container-runtime/config.toml
 
-#$COPY /etc/yum.repos.d/* /etc/yum.repos.d/.
+UNAME=$(uname -r)
+
+$RUN mkdir -p /lib/modules/$UNAME
+$RUN touch /lib/modules/$UNAME/{modules.builtin,modules.order}
+$RUN bash -c "ln -s /usr/src/kernels/$UNAME  /lib/modules/$UNAME/build"
+
+
+$COPY /etc/yum.repos.d/oso-rhui-rhel-server-releases.repo /etc/yum.repos.d/.
 $COPY /var/lib/yum/client-*.pem /var/lib/yum/.
 
-$RUN yum install -y $EPEL_REPO $CUDA_REPO
-$RUN curl -s -L $HOOK_REPO | tee $YUM_REPO 
+$RUN yum install -y $EPEL_REPO $CUDA_REPO 
+$RUN bash -c "curl -s -L $HOOK_REPO | tee $YUM_REPO"
 
-$RUN yum install -y $NVIDIA_DRIVER_RPMS
+$RUN yum install -y $BASE
+$RUN yum install -y $RPMS && yum clean all
 
+#$RUN dkms install -m nvidia/$VERSION
 
 $RUN sed -i 's/#root/root/g' $HOOK_CONFIG 
 $RUN sed -i 's/#path.*/path = "\/run\/nvidia\/driver\/usr\/bin\/nvidia-container-cli"/g' $HOOK_CONFIG 
 $RUN sed -i 's/#debug/debug/g' $HOOK_CONFIG 
 
-$RUN mkdir -p /lib/modules/`uname -r`
-$RUN touch /lib/modules/`uname -r`/{modules.builtin,modules.order}
-$RUN depmod
-
 $COPY nvidia-driver        /usr/local/bin
 
 $ENTRYPOINT '["nvidia-driver", "init"]' $CNT
-$COMMIT quay.io/zvonkok/nvidia-driver:v$NVIDIA_DRIVER_VERSION
+$COMMIT quay.io/zvonkok/nvidia-driver:v410.79
 

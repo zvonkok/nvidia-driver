@@ -147,8 +147,8 @@ _load_driver() {
     echo "Loading NVIDIA driver kernel modules..."
     modprobe -a nvidia nvidia-uvm nvidia-modeset
 
-    echo "TODO TODO TODO TODO Starting NVIDIA persistence daemon..."
-#    nvidia-persistenced --persistence-mode
+    echo "Starting NVIDIA persistence daemon..."
+    nvidia-persistenced --persistence-mode
 }
 
 # Stop persistenced and unload the kernel modules if they are currently loaded.
@@ -303,7 +303,7 @@ init() {
 
     _load_driver
 
-    chcon -t container_file_t nvidia*
+    #chcon -t container_file_t nvidia*
 
     _mount_rootfs
     _write_kernel_update_hook
