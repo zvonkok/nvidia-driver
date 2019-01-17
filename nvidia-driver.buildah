@@ -1,51 +1,42 @@
 #!/bin/bash -x
 
 CNT=$(buildah from rhel7)
-#MNT=$(buildah mount $CNT)
 
 ENV="buildah config --env"
 RUN="buildah run --user 0 $CNT --"
 COPY="buildah copy $CNT"
 COMMIT="buildah commit $CNT"
-UMOUNT="buildah umount"
 ENTRYPOINT="buildah config --entrypoint"
-RUNV="buildah run --volume /var/lib/docker/nvidia:/var/lib/docker/nvidia:z $CNT"
 
-HACK="buildah run --volume /var/lib/docker/nvidia:/var/lib/docker/nvidia:z $CNT --"
+NVIDIA_DRIVER_VERSION=410.79
+NVIDIA_DRIVER_RPMS="nvidia-driver nvidia-driver-cuda nvidia-modprobe nvidia-container-runtime-hook"
 
-_NVIDIA_DRIVER_VERSION=410.78
+EPEL_REPO=https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+CUDA_REPO=https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-repo-rhel7-10.0.130-1.x86_64.rpm
 
-$COPY /etc/yum.repos.d/* /etc/yum.repos.d/.
+HOOK_REPO=https://nvidia.github.io/nvidia-container-runtime/centos7/nvidia-container-runtime.repo
+YUM_REPO=/etc/yum.repos.d/nvidia-container-runtime.repo
+HOOK_CONFIG=/etc/nvidia-container-runtime/config.toml
+
+#$COPY /etc/yum.repos.d/* /etc/yum.repos.d/.
 $COPY /var/lib/yum/client-*.pem /var/lib/yum/.
 
-#$HACK yum -y install kernel --downloadonly --downloaddir=/tmp
-#$HACK rpm -ivh --nodeps --force /tmp/kernel-*.rpm
+$RUN yum install -y $EPEL_REPO $CUDA_REPO
+$RUN curl -s -L $HOOK_REPO | tee $YUM_REPO 
 
-#$RUN yum install  http://file.str.redhat.com/~tbaeder/nv-preview-repo-0.1-1.el7.noarch.rpm
+$RUN yum install -y $NVIDIA_DRIVER_RPMS
 
-#$RUNV yum -y install yum-plugin-nvidia
-$RUNV yum -y install kmod-nvidia-branch-410 nvidia-container-runtime-hook
 
-#$HACK rm -rf /tmp/*.rpm
-#$HACK rpm -e kernel
-
-$RUN sed -i 's/#root/root/g' /etc/nvidia-container-runtime/config.toml
-$RUN sed -i 's/#path.*/path = "\/run\/nvidia\/driver\/usr\/bin\/nvidia-container-cli"/g'  /etc/nvidia-container-runtime/config.toml
-$RUN sed -i 's/#debug/debug/g' /etc/nvidia-container-runtime/config.toml
+$RUN sed -i 's/#root/root/g' $HOOK_CONFIG 
+$RUN sed -i 's/#path.*/path = "\/run\/nvidia\/driver\/usr\/bin\/nvidia-container-cli"/g' $HOOK_CONFIG 
+$RUN sed -i 's/#debug/debug/g' $HOOK_CONFIG 
 
 $RUN mkdir -p /lib/modules/`uname -r`
 $RUN touch /lib/modules/`uname -r`/{modules.builtin,modules.order}
 $RUN depmod
 
 $COPY nvidia-driver        /usr/local/bin
-$COPY oci-nvidia-hook.json /root
-
 
 $ENTRYPOINT '["nvidia-driver", "init"]' $CNT
-
-$COMMIT quay.io/zvonkok/nvidia-driver:v410.78
-
-#$UMOUNT $MNT
-
-
+$COMMIT quay.io/zvonkok/nvidia-driver:v$NVIDIA_DRIVER_VERSION
 
