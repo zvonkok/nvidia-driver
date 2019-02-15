@@ -2,7 +2,7 @@
 
 set -e 
 
-CNT=$(buildah from rhel7)
+CNT=$(buildah from brew-pulp-docker01.web.prod.ext.phx2.redhat.com:8888/rhel8)
 
 ENV="buildah config --env"
 RUN="buildah run --user 0 $CNT --"
@@ -12,7 +12,7 @@ ENTRYPOINT="buildah config --entrypoint"
 
 VERSION=410.79
 BASE="make kernel-devel"
-RPMS="nvidia-driver-$VERSION nvidia-driver-cuda-$VERSION nvidia-modprobe nvidia-container-runtime-hook"
+RPMS="nvidia-driver-$VERSION nvidia-driver-cuda-$VERSION nvidia-modprobe nvidia-container-runtime-hook nvidia-driver-NVML"
 
 EPEL_REPO=https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 CUDA_REPO=https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-repo-rhel7-10.0.130-1.x86_64.rpm
@@ -28,16 +28,14 @@ $RUN touch /lib/modules/$UNAME/{modules.builtin,modules.order}
 $RUN bash -c "ln -s /usr/src/kernels/$UNAME  /lib/modules/$UNAME/build"
 
 
-$COPY /etc/yum.repos.d/oso-rhui-rhel-server-releases.repo /etc/yum.repos.d/.
-$COPY /var/lib/yum/client-*.pem /var/lib/yum/.
+$COPY /etc/yum.repos.d/{beaker-BaseOS,beaker-AppStream}.repo /etc/yum.repos.d/.
+#$COPY /var/lib/dnf/client-*.pem /var/lib/dnf/.
 
-$RUN yum install -y $EPEL_REPO $CUDA_REPO 
+$RUN dnf install -y $EPEL_REPO $CUDA_REPO 
 $RUN bash -c "curl -s -L $HOOK_REPO | tee $YUM_REPO"
 
-$RUN yum install -y $BASE
-$RUN yum install -y $RPMS && yum clean all
-
-#$RUN dkms install -m nvidia/$VERSION
+$RUN dnf install -y $BASE
+$RUN dnf install -y $RPMS && dnf clean all
 
 $RUN sed -i 's/#root/root/g' $HOOK_CONFIG 
 $RUN sed -i 's/#path.*/path = "\/run\/nvidia\/driver\/usr\/bin\/nvidia-container-cli"/g' $HOOK_CONFIG 
@@ -46,5 +44,5 @@ $RUN sed -i 's/#debug/debug/g' $HOOK_CONFIG
 $COPY nvidia-driver        /usr/local/bin
 
 $ENTRYPOINT '["nvidia-driver", "init"]' $CNT
-$COMMIT quay.io/zvonkok/nvidia-driver:v410.79
+$COMMIT quay.io/zvonkok/nvidia-driver:v410.79-4.18.0-64.el8.x86_64
 
